@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="A simple, fast expense tracker built with vanilla HTML, CSS, and JavaScript. Track income and expenses, filter transactions, and view monthly summaries." />
+    <meta name="theme-color" content="#131b2e" />
+    <title>Expense Tracker — Track Your Money</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235468e0' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="app-header">
+        <h1 class="app-title">Expense Tracker</h1>
+        <div class="app-actions">
+          <button type="button" class="icon-btn" id="export-btn" aria-label="Export data as JSON" title="Export data">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <path d="M7 10l5 5 5-5"/>
+              <path d="M12 15V3"/>
+            </svg>
+          </button>
+          <button type="button" class="icon-btn" id="import-btn" aria-label="Import data from JSON" title="Import data">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <path d="M17 8l-5-5-5 5"/>
+              <path d="M12 3v12"/>
+            </svg>
+          </button>
+          <input type="file" id="import-file" accept="application/json" hidden />
+        </div>
+      </header>
+
+      <!-- Left column: balance + form -->
+      <div class="col-main">
+        <section class="balance-card" aria-labelledby="balance-label">
+          <p class="balance-label" id="balance-label">Your balance</p>
+          <p class="balance" id="balance" aria-live="polite">&#8377;0.00</p>
+
+          <div class="flow-bar" id="flow-bar" role="img" aria-label="Income compared with expenses">
+            <span class="flow-income" id="flow-income"></span>
+            <span class="flow-expense" id="flow-expense"></span>
+          </div>
+
+          <div class="flow-totals">
+            <div>
+              <p class="flow-name"><span class="dot dot-income"></span>Total income</p>
+              <p class="flow-amount money-plus" id="money-plus" aria-live="polite">+&#8377;0.00</p>
+            </div>
+            <div>
+              <p class="flow-name"><span class="dot dot-expense"></span>Total expenses</p>
+              <p class="flow-amount money-minus" id="money-minus" aria-live="polite">-&#8377;0.00</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="form-panel" aria-labelledby="form-title">
+          <h2 class="panel-title" id="form-title">Add transaction</h2>
+
+          <form id="form" novalidate>
+            <fieldset class="type-toggle">
+              <legend class="sr-only">Transaction type</legend>
+              <label>
+                <input type="radio" name="type" value="expense" checked />
+                <span class="toggle-expense">Expense</span>
+              </label>
+              <label>
+                <input type="radio" name="type" value="income" />
+                <span class="toggle-income">Income</span>
+              </label>
+            </fieldset>
+
+            <div class="form-control">
+              <label for="text">Description</label>
+              <input type="text" id="text" placeholder="e.g. Groceries" autocomplete="off" maxlength="60" />
+              <p class="field-error" id="err-text" aria-live="polite"></p>
+            </div>
+
+            <div class="form-control">
+              <label for="amount">Amount</label>
+              <div class="amount-wrap">
+                <span class="currency" aria-hidden="true">&#8377;</span>
+                <input type="number" id="amount" placeholder="0.00" min="0.01" step="0.01" inputmode="decimal" />
+              </div>
+              <p class="field-error" id="err-amount" aria-live="polite"></p>
+            </div>
+
+            <div class="form-row">
+              <div class="form-control">
+                <label for="category">Category</label>
+                <select id="category"></select>
+                <p class="field-error" id="err-category" aria-live="polite"></p>
+              </div>
+              <div class="form-control">
+                <label for="date">Date</label>
+                <input type="date" id="date" />
+                <p class="field-error" id="err-date" aria-live="polite"></p>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn" id="submit-btn">Add transaction</button>
+              <button type="button" class="btn btn-ghost" id="cancel-btn" hidden>Cancel</button>
+            </div>
+          </form>
+        </section>
+      </div>
+
+      <!-- Right column: history + insights -->
+      <div class="col-side">
+        <section class="panel history" aria-labelledby="history-title">
+          <div class="history-head">
+            <h2 class="panel-title" id="history-title">History</h2>
+            <span class="count" id="count">0 transactions</span>
+          </div>
+
+          <div class="filters">
+            <div class="chips" role="group" aria-label="Filter by type">
+              <button type="button" class="chip is-active" data-type="all" aria-pressed="true">All</button>
+              <button type="button" class="chip" data-type="income" aria-pressed="false">Income</button>
+              <button type="button" class="chip" data-type="expense" aria-pressed="false">Expense</button>
+            </div>
+            <label class="sr-only" for="filter-category">Filter by category</label>
+            <select id="filter-category"></select>
+          </div>
+
+          <ul id="list" class="list"></ul>
+
+          <div class="empty" id="empty">
+            <p class="empty-title" id="empty-title">No transactions yet</p>
+            <p class="empty-text" id="empty-text">Add your first income or expense using the form.</p>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="summary-title">
+          <div class="history-head">
+            <h2 class="panel-title" id="summary-title">Monthly summary</h2>
+            <label class="sr-only" for="summary-month">Month</label>
+            <input type="month" id="summary-month" class="month-input" />
+          </div>
+
+          <div class="summary-grid">
+            <div>
+              <p class="summary-label">Income</p>
+              <p class="summary-value plus" id="m-income">&#8377;0.00</p>
+            </div>
+            <div>
+              <p class="summary-label">Expenses</p>
+              <p class="summary-value minus" id="m-expense">&#8377;0.00</p>
+            </div>
+            <div>
+              <p class="summary-label">Saved</p>
+              <p class="summary-value" id="m-net">&#8377;0.00</p>
+            </div>
+          </div>
+
+          <h3 class="chart-title">Expenses by category</h3>
+          <ul class="chart" id="chart"></ul>
+          <p class="empty-text chart-empty" id="chart-empty">No expenses in this month.</p>
+        </section>
+      </div>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
